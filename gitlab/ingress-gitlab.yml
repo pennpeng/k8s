@@ -2,7 +2,7 @@ apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
   name: gitlab
-  namespace: public-service
+  namespace: gitlab
   annotations:
     kubernetes.io/ingress.class: nginx
 spec:
