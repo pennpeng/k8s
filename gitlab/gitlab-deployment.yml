@@ -1,8 +1,8 @@
-apiVersion: v1
-kind: ReplicationController
+apiVersion: apps/v1
+kind: Deployment
 metadata:
   name: gitlab-ldap
-  namespace: public-service
+  namespace: gitlab
 spec:
   replicas: 1
   selector:
@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: gitlab
-        image: sameersbn/gitlab:11.5.1
+        image: sameersbn/gitlab:11.7.5
         env:
         - name: TZ
           value: Asia/Shanghai
@@ -35,7 +35,7 @@ spec:
           value: dukuan@haixiangjinfu.com
 
         - name: GITLAB_HOST
-          value: gitlab.xxx.net
+          value: gitlab.172.50.0.29.nip.io
         - name: GITLAB_PORT
           value: "80"
         - name: GITLAB_SSH_PORT
@@ -70,7 +70,7 @@ spec:
           value: "6379"
 
         - name: SMTP_ENABLED
-          value: "true"
+          value: "false"
         - name: SMTP_DOMAIN
           value: smtp.exmail.qq.com
         - name: SMTP_HOST
@@ -100,28 +100,7 @@ spec:
           value: "true"
         - name: IMAP_STARTTLS
           value: "false"
-        - name: LDAP_ENABLED
-          value: "true"
-        - name: LDAP_LABEL
-          value: 'LDAP'
-        - name: LDAP_HOST
-          value: 'ldap-service'
-        - name: LDAP_PORT
-          value: '389'
-        - name: LDAP_UID
-          value: 'uid'
-        - name: LDAP_BIND_DN
-          value: 'cn=admin,dc=example,dc=org'
-        - name: LDAP_PASS
-          value: 'admin'
-        - name: LDAP_BASE
-          value: 'dc=example,dc=org'
-        - name: LDAP_ALLOW_USERNAME_OR_EMAIL_LOGIN
-          value: "true"
-        - name: LDAP_VERIFY_SSL
-          value: 'false'
-        - name: LDAP_METHOD
-          value: 'plain'
+
         
         ports:
         - name: http

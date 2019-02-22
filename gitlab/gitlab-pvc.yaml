@@ -2,10 +2,10 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: gitlab-gitlab
-  namespace: public-service
+  namespace: gitlab
 spec:
-  accessModes: [ "ReadWriteMany" ]
-  storageClassName: "gluster-heketi"
+  accessModes: [ "ReadWriteOnce" ]
+  storageClassName: "rook-ceph-block"
   resources:
     requests:
-      storage: 5Gi
+      storage: 20Gi
