@@ -6,7 +6,8 @@ metadata:
 spec:
   replicas: 1
   selector:
-    name: gitlab
+    matchLabels:
+      name: gitlab
   template:
     metadata:
       name: gitlab
