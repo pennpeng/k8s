@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitlab-runner
+  namespace: gitlab
+data:
+  config.toml: |
+    concurrent = 4
+
+    [[runners]]
+      name = "Kubernetes Runner"
+      url = "http://gitlab.172.50.0.29.nip.io/"
+      token = "bEDdbo54GWN9uN5Xhq-W"
+      executor = "kubernetes"
+      [runners.kubernetes]
+        namespace = "gitlab"
+        image = "busybox"
