@@ -1,0 +1,163 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: drone-rbac
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: drone
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drone-secrets
+  namespace: drone
+  labels:
+    app: drone-secrets
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drone-secrets
+  template:
+    metadata:
+      labels:
+        app: drone-secrets
+    spec:
+      containers:
+        - name: drone-secrets
+          image: drone/kubernetes-secrets
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SECRET_KEY
+              value: 72168f362d7f07d35caf4729ee9e2f8e
+          ports:
+            - name: http
+              containerPort: 3000
+      restartPolicy: Always
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: drone-secrets-service
+  namespace: drone
+spec:
+  selector:
+    app: drone-secrets
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      name: http
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drone-server
+  namespace: drone
+  labels:
+    app: drone-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drone-server
+  template:
+    metadata:
+      labels:
+        app: drone-server
+    spec:
+      containers:
+        - name: drone-server
+          image: drone/drone:1.0.0
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DRONE_KUBERNETES_ENABLED
+              value: "true"
+            - name: DRONE_KUBERNETES_NAMESPACE
+              value: drone
+            - name: DRONE_GITLAB_SERVER
+              value: http://gitlab.172.50.0.29.nip.io
+            - name: DRONE_GITLAB_CLIENT_ID
+              value: f9e3a6680f2b4a0a785b345e9a6edbf736b0a4725c42142d42567e3e4befb587
+            - name: DRONE_GITLAB_CLIENT_SECRET
+              value: 190e4ab327400878c41b7173ecd5ec156ef0f9b34e38c75109980b0e4fc45135
+            - name: DRONE_GIT_ALWAYS_AUTH
+              value: "false"
+            - name: DRONE_LOGS_TRACE
+              value: "true"
+            - name: DRONE_DEBUG
+              value: "true"
+            - name: DRONE_RPC_SERVER
+              value: http://drone-server-service
+            - name: DRONE_RPC_SECRET
+              value: 99cloud
+            - name: DRONE_SERVER_HOST
+              value: drone.172.50.0.29.nip.io
+            - name: DRONE_SERVER_PROTO
+              value: http
+            - name: DRONE_DATABASE_DRIVER
+              value: sqlite3
+            - name: DRONE_DATABASE_DATASOURCE
+              value: "/drone/drone.sqlite"
+            - name: DRONE_USER_CREATE
+              value: username:penn,admin:true
+            - name: DRONE_SECRET_SECRET
+              value: 72168f362d7f07d35caf4729ee9e2f8e
+            - name: DRONE_SECRET_ENDPOINT
+              value: http://drone-secrets-service
+          ports:
+            - name: http
+              containerPort: 80
+            - name: https
+              containerPort: 443
+          volumeMounts:
+            - name: drone-pvc
+              mountPath: "/drone"
+      volumes:
+        - name: drone-pvc
+          persistentVolumeClaim:
+            claimName: drone-pvc
+      restartPolicy: Always
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: drone-server-service
+  namespace: drone
+spec:
+  selector:
+    app: drone-server
+  ports:
+    - protocol: TCP
+      port: 80
+      name: http
+
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: drone-ingress
+  namespace: drone
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: drone.172.50.0.29.nip.io
+      http:
+        paths:
+          - path: /
+            backend:
+              serviceName: drone-server-service
+              servicePort: 80
+
